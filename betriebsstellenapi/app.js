@@ -64,12 +64,13 @@ app.get('/', (req, res) => {
  * (Re-)loads a csv file. 
  * 
  * A new file path can be specified using the query parameter "path".
+ * If no path parameter is given, use existing path.
  * 
  * TODO: proper error handling
  */
 app.get('/loaddata', (req, res) => {
 
-  if(req.query.path != ''){
+  if(req.query.path != undefined){
   
     read_csv(req.query.path)  
   } else {
