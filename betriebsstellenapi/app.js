@@ -2,11 +2,14 @@ const express = require('express')
 const app = express()
 const port = 8000
 const fs = require('fs')
+const util = require('util')
 
 const csv_folder = 'files'
 const csv_file = 'DBNetz-Betriebsstellenverzeichnis-Stand2021-10.csv'
 
 var path = csv_folder + '/' + csv_file
+
+const regPattern = /^[a-zA-Z]+$/
 
 var data
 
@@ -28,7 +31,9 @@ function read_csv(path) {
     data[i] = data[i].split(',');
 
     }
+
 }
+
 
 // searches for a given Betriebsstellen-Code in loaded CSV-File and returns a JSON-Object.
 function find_betriebsstelle(request){
@@ -80,21 +85,31 @@ app.get('/loaddata', (req, res) => {
 /**
  *  Wildcard GET for handling Betriebstellen-Codes
  * 
- * TODO: Reject obviously invalid codes right away (containing digits, special characters, etc.)
- *       [a-zA-Z]+ doesn't seem to be working?
  */
 app.get(/^(.+)$/, (req, res) => {
 
-  var response_string = find_betriebsstelle(req.path.substring(1))
-  var response_json = JSON.parse(response_string)
+  const code = req.path.substring(1)
+  var response_string = ''
+  var response_json
 
-  // send status code according to response value (code found/not found)
-  if(response_string.includes('not found')){
-    res.status(404).json(response_json)
+  //reject invalid code
+  if(!code.match(regPattern)){
+    response_string = `{"body":"invalid code: ${code}"}`
+    response_json = JSON.parse(response_string)
+    res.status(400).json(response_json)
   } else {
-    res.status(200).json(response_json)
-  }
 
+      //continue if code is valid
+      response_string = find_betriebsstelle(code)
+      response_json = JSON.parse(response_string)
+
+      // send status code according to response value (code found/not found)
+      if(response_string.includes('not found')){
+        res.status(404).json(response_json)
+      } else {
+        res.status(200).json(response_json)
+      }
+  }
 })
 
 
